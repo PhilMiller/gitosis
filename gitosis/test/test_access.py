@@ -159,6 +159,15 @@ def test_bad_owner():
         config=cfg, user='jdoe', mode='readonly', path='xyzzy'),
        None)
 
+def test_allow_all():
+    cfg = RawConfigParser()
+    cfg.add_section('user jdoe')
+    cfg.set('user jdoe', 'allow-read-all', 'yes')
+    cfg.add_section('repo xyzzy')
+    eq(access.haveAccess(
+        config=cfg, user='jdoe', mode='readonly', path='xyzzy'),
+       ('repositories', 'xyzzy'))
+
 def test_base_local():
     cfg = RawConfigParser()
     cfg.add_section('group fooers')
@@ -194,13 +203,15 @@ def test_list_read():
     cfg.add_section('user jdoe')
     cfg.set('user jdoe', 'readonly', 'baz/quux/thud')
     cfg.add_section('user master')
+    cfg.add_section('user admin')
+    cfg.set('user admin', 'allow-read-all', 'yes')
     cfg.add_section('repo baz/quux/thud')
     cfg.set('repo baz/quux/thud', 'owner', 'master')
     users = set()
     groups = set()
     access.listAccess(cfg,'readonly','baz/quux/thud',users,groups)
     eq(sorted(groups), ['mooers'])
-    eq(sorted(users), ['jdoe','master'])
+    eq(sorted(users), ['admin','jdoe','master'])
 
 def test_list_all():
     cfg = RawConfigParser()

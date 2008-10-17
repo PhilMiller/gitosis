@@ -99,6 +99,16 @@ def haveAccess(config, user, mode, path):
                     mapping=mapping,
                     ))
 
+        if mapping is None and mode == 'readonly':
+            try:
+                if config.getboolean(sectname, 'allow-read-all'):
+                    log.debug(
+                        'Access ok for %(user)r as %(mode)r on %(path)r via allow-read-all'
+                        % dict(user=user,mode=mode,path=path))
+                    mapping = path
+            except (NoSectionError, NoOptionError):
+                pass
+
         if mapping is not None:
             prefix = None
             try:
@@ -169,6 +179,14 @@ def listAccess(config, mode, path, users, groups):
             for (iname, ivalue) in config.items(sectname):
                 if ivalue == path and iname.startswith('map %s ' % mode):
                     out_set.add(name)
+
+        if mode == 'readonly':
+            try:
+                if config.getboolean(sectname, 'allow-read-all'):
+                    out_set.add(name)
+            except (NoSectionError, NoOptionError):
+                pass
+
 
     owner = getOwnerAccess(config, mode, path)
     if owner is not None:
