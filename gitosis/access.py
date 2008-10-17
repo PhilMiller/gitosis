@@ -3,6 +3,28 @@ from ConfigParser import NoSectionError, NoOptionError
 
 from gitosis import group
 
+def getOwnerAccess(config, mode, path):
+    """
+    Returns the owner user for the relevant repository, if access
+    is granted for this mode. The 'owner' option must refer to an
+    existing user section.
+
+    Returns None if no owner is available for this path and mode.
+    """
+    try:
+        accessible = config.getboolean('gitosis', 'owner-%s' % mode)
+    except (NoSectionError, NoOptionError):
+        accessible = False
+
+    if accessible:
+        try:
+            owner = config.get('repo %s' % path, 'owner')
+            if config.has_section('user %s' % owner):
+                return owner
+        except (NoSectionError, NoOptionError):
+            pass
+
+
 def haveAccess(config, user, mode, path):
     """
     Map request for write access to allowed path.
@@ -32,6 +54,11 @@ def haveAccess(config, user, mode, path):
             basename=basename,
             ))
         path = basename
+
+    try:
+        default_prefix = config.get('gitosis', 'repositories')
+    except (NoSectionError, NoOptionError):
+        default_prefix = 'repositories'
 
     sections = ['group %s' % item for item in
                  group.getMembership(config=config, user=user)]
@@ -77,10 +104,7 @@ def haveAccess(config, user, mode, path):
             try:
                 prefix = config.get(sectname, 'repositories')
             except (NoSectionError, NoOptionError):
-                try:
-                    prefix = config.get('gitosis', 'repositories')
-                except (NoSectionError, NoOptionError):
-                    prefix = 'repositories'
+                prefix = default_prefix
 
             log.debug(
                 'Using prefix %(prefix)r for %(path)r'
@@ -89,6 +113,23 @@ def haveAccess(config, user, mode, path):
                 path=mapping,
                 ))
             return (prefix, mapping)
+
+    owner = getOwnerAccess(config, mode, path)
+    if owner == user:
+        try:
+            prefix = config.get('user %s' % owner, 'repositories')
+        except (NoSectionError, NoOptionError):
+            prefix = default_prefix
+
+        log.debug(
+            'Access ok for %(user)r as %(mode)r on owned %(path)r, using prefix %(prefix)r'
+            % dict(
+                prefix=prefix,
+                path=path,
+                user=user,
+                mode=mode,
+                ))
+        return (prefix, path)
 
 
 def listAccess(config, mode, path, users, groups):
@@ -128,6 +169,10 @@ def listAccess(config, mode, path, users, groups):
             for (iname, ivalue) in config.items(sectname):
                 if ivalue == path and iname.startswith('map %s ' % mode):
                     out_set.add(name)
+
+    owner = getOwnerAccess(config, mode, path)
+    if owner is not None:
+        users.add(owner)
 
 
 def getAllAccess(config,path,modes=['readonly','writable','writeable']):

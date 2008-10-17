@@ -138,6 +138,27 @@ def test_user():
         config=cfg, user='jdoe', mode='readonly', path='xyzzy'),
        ('repositories', 'xyzzy'))
 
+def test_owner():
+    cfg = RawConfigParser()
+    cfg.add_section('gitosis')
+    cfg.set('gitosis', 'owner-readonly', 'yes')
+    cfg.add_section('user jdoe')
+    cfg.add_section('repo xyzzy')
+    cfg.set('repo xyzzy', 'owner', 'jdoe')
+    eq(access.haveAccess(
+        config=cfg, user='jdoe', mode='readonly', path='xyzzy'),
+       ('repositories', 'xyzzy'))
+
+def test_bad_owner():
+    cfg = RawConfigParser()
+    cfg.add_section('gitosis')
+    cfg.set('gitosis', 'owner-readonly', 'yes')
+    cfg.add_section('repo xyzzy')
+    cfg.set('repo xyzzy', 'owner', 'jdoe')
+    eq(access.haveAccess(
+        config=cfg, user='jdoe', mode='readonly', path='xyzzy'),
+       None)
+
 def test_base_local():
     cfg = RawConfigParser()
     cfg.add_section('group fooers')
@@ -163,6 +184,8 @@ def test_list_map():
 
 def test_list_read():
     cfg = RawConfigParser()
+    cfg.add_section('gitosis')
+    cfg.set('gitosis', 'owner-readonly', 'yes')
     cfg.add_section('group fooers')
     cfg.set('group fooers', 'members', 'jdoe')
     cfg.set('group fooers', 'map writable foo/bar', 'baz/quux/thud')
@@ -170,11 +193,14 @@ def test_list_read():
     cfg.set('group mooers', 'readonly', 'baz/quux/thud')
     cfg.add_section('user jdoe')
     cfg.set('user jdoe', 'readonly', 'baz/quux/thud')
+    cfg.add_section('user master')
+    cfg.add_section('repo baz/quux/thud')
+    cfg.set('repo baz/quux/thud', 'owner', 'master')
     users = set()
     groups = set()
     access.listAccess(cfg,'readonly','baz/quux/thud',users,groups)
     eq(sorted(groups), ['mooers'])
-    eq(sorted(users), ['jdoe'])
+    eq(sorted(users), ['jdoe','master'])
 
 def test_list_all():
     cfg = RawConfigParser()
