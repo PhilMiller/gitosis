@@ -85,6 +85,8 @@ def set_export_ok(config):
 
     try:
         enable_if_all = config.getboolean('gitosis', 'daemon-if-all')
+        if enable_if_all:
+            access_table = access.getAccessTable(config)
     except (NoSectionError, NoOptionError):
         enable_if_all = False
     log.debug(
@@ -98,7 +100,7 @@ def set_export_ok(config):
         except (NoSectionError, NoOptionError):
             enable = global_enable
             if not enable and enable_if_all:
-                (users,groups,all_refs) = access.getAllAccess(config,name)
+                (users,groups,all_refs) = access.getAllAccess(config,access_table,name)
                 enable = ('@all' in all_refs)
 
         if enable:
