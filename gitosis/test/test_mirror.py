@@ -10,6 +10,8 @@ def get_config():
     cfg = RawConfigParser()
     cfg.add_section('repo foo')
     cfg.set('repo foo', 'mirrors', '/var/bar /var/baz')
+    cfg.add_section('repo foo/bar')
+    cfg.set('repo foo/bar', 'mirrors', '/var/foo/bar /var/foo/baz')
     return cfg
 
 def test_get_mirrors():
@@ -41,6 +43,7 @@ def test_get_mirrors_with_all():
     
 def test_get_git_name():
     eq('foo', mirror.get_git_name('/home/git/repository', '/home/git/repository/foo.git'))
+    eq('foo/bar', mirror.get_git_name('/home/git/repository', '/home/git/repository/foo/bar.git'))
     
 def test_push_mirrors():
     tmp = maketemp()
@@ -75,3 +78,16 @@ def test_push_mirrors():
        ['foo'])
     eq(os.listdir(export_baz),
        ['foo'])
+    
+def test_get_repo_section_mirrors():
+    cfg = get_config()
+    
+    mirrors = list(mirror.get_repo_section_mirrors(cfg, 'foo'))
+    ok('/var/bar' in mirrors)
+    ok('/var/baz' in mirrors)
+    eq(2, len(mirrors))
+    
+    mirrors = list(mirror.get_repo_section_mirrors(cfg, 'foo/bar'))
+    ok('/var/foo/bar' in mirrors)
+    ok('/var/foo/baz' in mirrors)
+    eq(2, len(mirrors))

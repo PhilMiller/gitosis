@@ -2,6 +2,7 @@ import os, logging
 from ConfigParser import NoSectionError, NoOptionError
 
 from gitosis import group
+from gitosis import util
 
 def haveAccess(config, user, mode, path):
     """
@@ -39,7 +40,7 @@ def haveAccess(config, user, mode, path):
         except (NoSectionError, NoOptionError):
             repos = []
         else:
-            repos = repos.split()
+            repos = util.getExplicitRepositoryNames(config, repos.split())
 
         mapping = None
 
