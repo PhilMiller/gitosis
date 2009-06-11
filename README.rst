@@ -58,7 +58,19 @@ domain). You may choose another location. Adjust to suit and run::
 	    git
 
 This command is known to work in Debian and Ubuntu. Your mileage may
-vary.
+vary.  Under CentOS (and presumably RedHat) execute the 
+following commands as root instead::
+
+  useradd \
+        -r \
+        -s /bin/sh \
+        -c 'git version control' \
+        -d /home/git \
+        git
+
+  mkdir -p /home/git
+
+  chown git:git /home/git
 
 You will need an SSH public key to continue. If you don't have one,
 you need to generate one. See the man page for ``ssh-keygen``, and you
@@ -73,7 +85,9 @@ the actual configuration file, and it will add the SSH public key to
 ``~/.ssh/authorized_keys`` with a ``command=`` option that restricts
 it to running ``gitosis-serve``. Run::
 
-	sudo -H -u git gitosis-init <FILENAME.pub
+	# sudo -H -u -s
+	$ git gitosis-init <FILENAME.pub
+	# exit
 	# (or just copy-paste the public key when prompted)
 
 then just ``git clone git@SERVER:gitosis-admin.git``, and you get a
