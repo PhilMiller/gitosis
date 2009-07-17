@@ -60,21 +60,45 @@ def get_mirrors(config, git_name):
     @param config: ConfigParser object
     @param git_name: the name of the repository  
     """
-    log = logging.getLogger('gitosis.mirror.get_mirrors')
+    for mirror in get_repo_section_mirrors(config, git_name):
+        yield mirror
+    
+    for uri, repos in get_mirror_sections(config):
+        for repo in repos:
+            if repo in ('@all', git_name,):
+                yield uri % git_name
+                    
+def get_repo_section_mirrors(config, git_name):
+    """
+    Get the list of mirrors set in a repo section
+    
+    @param config: ConfigParser object
+    @param git_name: the name of the repository
+    @return generator  
+    """
     try:
         mirrors = config.get('repo %s' % git_name, 'mirrors')
         for mirror in mirrors.split():
             yield mirror
     except (NoSectionError, NoOptionError):
         pass
+
+def get_mirror_sections(config):
+    """
+    Get the list of all mirror sections.
     
+    Return a list of uri and repositories set in each section
+    
+    @param config: ConfigParser object
+    @return generator 
+    """
+    
+    log = logging.getLogger('gitosis.mirror.get_mirror_sections')
     mirror_sections = (s for s in config.sections() if s.startswith('mirror '))
     for section in mirror_sections:
         try:
-            repos = config.get(section, 'repos')
-            if repos == '@all' or git_name in repos.split():
-                yield config.get(section, 'uri').strip() % git_name
+            uri =  config.get(section, 'uri').strip()
+            repos = config.get(section, 'repos').split()
+            yield uri, util.getExplicitRepositoryNames(config, repos)
         except NoOptionError:
             log.error('%s section is lacking the "repos" or "uri" settings.', section)
-        
-    

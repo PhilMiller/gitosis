@@ -51,7 +51,6 @@ def test_init_templates():
         os.path.dirname(__file__),
         'mocktemplates',
         )
-    os.umask(0022)
     repository.init(path, template=templatedir)
     repository.init(path)
     got = readFile(os.path.join(path, 'no-confusion'))

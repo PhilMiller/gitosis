@@ -130,14 +130,6 @@ def test_base_global_unset():
         config=cfg, user='jdoe', mode='readonly', path='xyzzy'),
        ('repositories', 'xyzzy'))
 
-def test_user():
-    cfg = RawConfigParser()
-    cfg.add_section('user jdoe')
-    cfg.set('user jdoe', 'readonly', 'foo xyzzy bar')
-    eq(access.haveAccess(
-        config=cfg, user='jdoe', mode='readonly', path='xyzzy'),
-       ('repositories', 'xyzzy'))
-
 def test_base_local():
     cfg = RawConfigParser()
     cfg.add_section('group fooers')
